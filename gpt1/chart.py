@@ -5,10 +5,15 @@ import openai
 import pandas as pd
 import pickle
 import tiktoken
+import os
 from quickchart import QuickChart
 COMPLETIONS_MODEL = "text-davinci-003"
 EMBEDDING_MODEL = "text-embedding-ada-002"
+from dotenv import load_dotenv
+load_dotenv()
 
+API_KEY = os.getenv("OPENAI_API_KEY") 
+openai.api_key = API_KEY
 df = pd.read_csv('ICICI2.csv')
 
 # df["token"] = None
@@ -21,7 +26,7 @@ df = pd.read_csv('ICICI2.csv')
 # "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" -- MLAI
 # "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" -- LP
 def get_embedding(text: str, model: str=EMBEDDING_MODEL) -> list[float]:
-    openai.api_key = "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"
+    # openai.api_key = "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"
     result = openai.Embedding.create(
       model=model,
       input=text
@@ -55,7 +60,7 @@ def load_embeddings(fname: "str") -> dict[tuple[str, str], list[float]]:
 
     }
 
-document_embeddings = load_embeddings("icici_embed_5.csv")
+document_embeddings = load_embeddings("ICICI_embed_5.csv")
 
 
 def vector_similarity(x: list[float], y: list[float]) -> float:
@@ -212,4 +217,5 @@ def chart1(text):
     # image = qc.to_file('A:\icici_gpt\static\images\mychart2.png')
     
     return url , image_filename
+    
     
