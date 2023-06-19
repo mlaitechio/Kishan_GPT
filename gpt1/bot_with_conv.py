@@ -3,21 +3,23 @@ from termcolor import colored
 import pandas as pd
 import re
 import tiktoken
+import os
+from dotenv import load_dotenv
 import numpy as np
 from openai.embeddings_utils import get_embedding, cosine_similarity
 # import streamlit as st
 # from .icici_chat import construct_prompt
 # from database import get_redis_connection,get_redis_results
+load_dotenv()
 
+API_KEY = os.getenv("OPENAI_API_KEY") 
+openai.api_key = API_KEY
 # from config import CHAT_MODEL,COMPLETIONS_MODEL, INDEX_NAME
 
 # redis_client = get_redis_connection()
 EMBEDDING_MODEL = "text-embedding-ada-002"
 # A basic class to create a message as a dict for chat
-openai.api_key = "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"
-
 df = pd.read_csv('ICICI2.csv')
-
 # df["token"] = None
 # for idx, r in df.iterrows():
 # #     print(len(r.content))
@@ -28,7 +30,7 @@ df = pd.read_csv('ICICI2.csv')
 # "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" -- MLAI
 # "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" -- LP
 def get_embedding(text: str, model: str=EMBEDDING_MODEL) -> list[float]:
-    openai.api_key = "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"
+    
     result = openai.Embedding.create(
       model=model,
       input=text
@@ -56,7 +58,19 @@ def load_embeddings(fname: "str") -> dict[tuple[str, str], list[float]]:
 
     df = pd.read_csv(fname, header=0)
 
-    max_dim = max([int(c) for c in df.columns if c != "title"])
+    # max_dim = max([int(c) for c in df.columns if c != "title"])
+    # max_dim = max([int(c) for c in df.columns if c != "title"])
+    max_dim = 0
+    for c in df.columns:
+        if c != "title" and not c.startswith("version"):
+            try:
+                max_dim = max(max_dim, int(c))
+            except ValueError:
+                pass
+
+
+    
+
     return {
         (r.title): [r[str(i)] for i in range(max_dim + 1)] for _, r in df.iterrows()
 
@@ -185,7 +199,7 @@ def get_search_results(prompt):
             
 
 def ask_assistent(prompt,conversation):
-        conversation_history = []
+        conversation_history1 = []
         # system = get_search_results(query1)
         prompt="""Given the following chat history and a follow up question, rephrase the follow up input question to be a standalone question.
     Or end the conversation if it seems like it's done. Please Note: If Customer Greet in response only give Greet like hii, hello , namaste.. etc don't make question of this greets.
@@ -200,14 +214,14 @@ def ask_assistent(prompt,conversation):
 
     Standalone question:""".format(prompt=prompt, conversation=conversation)
         message = {"role": "system", "content": prompt}  
-        conversation_history.append(message)
+        conversation_history1.append(message)
         user = {"role": "user", "content": prompt}
-        conversation_history.append(user)
+        conversation_history1.append(user)
         # conversation.append({"content": query1})
         
         response = openai.ChatCompletion.create(
-            engine="gpt-35-turbo",
-            messages = conversation_history
+            model="gpt-3.5-turbo",
+            messages = conversation_history1
             
         )
         print("\n" + response['choices'][0]['message']['content'] + "\n")
