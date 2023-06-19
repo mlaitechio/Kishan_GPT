@@ -1,4 +1,0 @@
-ICICI2.csv filter=lfs diff=lfs merge=lfs -text
-*.csv filter=lfs diff=lfs merge=lfs -textgit
-git rm --cached .env
-
