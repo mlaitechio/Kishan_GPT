@@ -1,3 +1,1 @@
-ICICI2.csv filter=lfs diff=lfs merge=lfs -text
-*.csv filter=lfs diff=lfs merge=lfs -textgit
-.env*
+ICICI_embed_5.csv filter=lfs diff=lfs merge=lfs -text
