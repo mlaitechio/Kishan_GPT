@@ -5,6 +5,13 @@ import re
 import tiktoken
 import numpy as np
 from openai.embeddings_utils import get_embedding, cosine_similarity
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+API_KEY = os.getenv("OPENAI_API_KEY") 
+openai.api_key = API_KEY
+
 # import streamlit as st
 # from .icici_chat import construct_prompt
 # from database import get_redis_connection,get_redis_results
@@ -14,7 +21,7 @@ from openai.embeddings_utils import get_embedding, cosine_similarity
 # redis_client = get_redis_connection()
 EMBEDDING_MODEL = "text-embedding-ada-002"
 # A basic class to create a message as a dict for chat
-openai.api_key = "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"
+
 df = pd.read_csv('icici_with_token_new.csv')
 
 # df["token"] = None
@@ -27,7 +34,7 @@ df = pd.read_csv('icici_with_token_new.csv')
 # "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" -- MLAI
 # "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" -- LP
 def get_embedding(text: str, model: str=EMBEDDING_MODEL) -> list[float]:
-    openai.api_key = "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"
+  
     result = openai.Embedding.create(
       model=model,
       input=text

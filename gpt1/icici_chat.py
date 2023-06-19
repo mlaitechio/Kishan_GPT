@@ -3,7 +3,12 @@ import openai
 import pandas as pd
 import pickle
 import tiktoken
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
+API_KEY = os.getenv("OPENAI_API_KEY") 
+openai.api_key = API_KEY
 COMPLETIONS_MODEL = "text-davinci-003"
 EMBEDDING_MODEL = "text-embedding-ada-002"
 
@@ -19,7 +24,7 @@ df = pd.read_csv('icici_with_token_new.csv')
 # "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" -- MLAI
 # "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" -- LP
 def get_embedding(text: str, model: str=EMBEDDING_MODEL) -> list[float]:
-    openai.api_key = "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"
+    
     result = openai.Embedding.create(
       model=model,
       input=text

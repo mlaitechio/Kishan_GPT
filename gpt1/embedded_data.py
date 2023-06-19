@@ -3,7 +3,12 @@ import openai
 import pandas as pd
 import pickle
 import tiktoken
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
+API_KEY = os.getenv("OPENAI_API_KEY") 
+openai.api_key = API_KEY
 COMPLETIONS_MODEL = "text-davinci-003"
 EMBEDDING_MODEL = "text-embedding-ada-002"
 
@@ -22,7 +27,7 @@ for idx, r in df.iterrows():
 def get_embedding(text: str, model: str=EMBEDDING_MODEL) -> list[float]:
     """embedd the given csv data """
     ccontent = text.encode(encoding='ASCII',errors='ignore').decode() #fix any UNICODE error
-    openai.api_key = "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"
+    
     result = openai.Embedding.create(
       model=model,
       input=text
