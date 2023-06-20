@@ -3,26 +3,22 @@ import openai
 import pandas as pd
 import pickle
 import tiktoken
+
+COMPLETIONS_MODEL = "text-davinci-003"
+EMBEDDING_MODEL = "text-embedding-ada-002"
 import os
 from dotenv import load_dotenv
 load_dotenv()
 
 API_KEY = os.getenv("OPENAI_API_KEY") 
 openai.api_key = API_KEY
-COMPLETIONS_MODEL = "text-davinci-003"
-EMBEDDING_MODEL = "text-embedding-ada-002"
-
-df = pd.read_csv('FAQ_ICICI.csv')
-
+df = pd.read_csv('ICICI2.csv')
 # df["token"] = None
 # for idx, r in df.iterrows():
 # #     print(len(r.content))
 # #     df["token"] = df[len(r.content)]
 #     df.loc[idx,'token'] = len(r.content)
 
-# "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" -- MLAI
-# "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" -- MLAI
-# "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" -- LP
 def get_embedding(text: str, model: str=EMBEDDING_MODEL) -> list[float]:
     
     result = openai.Embedding.create(
@@ -58,8 +54,7 @@ def load_embeddings(fname: "str") -> dict[tuple[str, str], list[float]]:
 
     }
 
-document_embeddings = load_embeddings("ICICI_faq_embed.csv")
-
+document_embeddings = load_embeddings("ICICI_embed_5.csv")
 
 def vector_similarity(x: list[float], y: list[float]) -> float:
     """
@@ -102,7 +97,7 @@ def construct_prompt(question: str, context_embeddings: dict, df: pd.DataFrame) 
     """
     Fetch relevant
     """
-    most_relevant_document_sections = order_document_sections_by_query_similarity(question, context_embeddings)[:3]
+    most_relevant_document_sections = order_document_sections_by_query_similarity(question, context_embeddings)[:5]
     #     print(most_relevant_document_sections)
     chosen_sections = []
     chosen_sections_len = 0
@@ -119,14 +114,31 @@ def construct_prompt(question: str, context_embeddings: dict, df: pd.DataFrame) 
 
         chosen_sections.append(SEPARATOR + document_section.content.replace("\n", " "))
         chosen_sections_indexes.append(str(section_index))
-
+        context = "".join(chosen_sections)
     # Useful diagnostic information
     print(f"Selected {len(chosen_sections)} document sections:")
     print("\n".join(chosen_sections_indexes))
     # print(type("".join(chosen_sections) ))
     # header = """Answer the question as truthfully as possible using the provided Given Below Information and previous conversation, and if the answer is not contained within in both, say "I don't know.For more details call on our CUSTOMER CARE NO.1800 1080"\n\nGiven Below Information:"""
-    header =  "please don't make answer if you can't find the answer simply say i don't know" + "".join(chosen_sections) + "Please help me find the answer to the following question:\n"+ f"{question}\n\n" + "please don't make answer if you can't find the answer simply say i don't know"
+    header = f"""You are a friendly, conversational ICICI bank assistant.You can use/refer the following context whats available urls, image urls,data, help find what they want, and answer any questions.
+It's ok if you don't know the answer simply say "i don't have that information".
 
+Context:\"""
+{context}
+\"""
+To get the best response, please keep the following guidelines in mind:
+
+You can provide useful URLs and image URLs based on the given context in your response.
+When answering your questions, you will present the information in bullet points.
+Please note that Yoy won't justify my responses.
+You can find more information on ICICI official website "https://www.icicibank.com/". This Url must presernt in every response
+
+Question:\"
+{question}
+
+\"""
+
+Helpful Answer:"""
     return header 
 
 
@@ -187,50 +199,11 @@ def answer_query_with_context(
         )
 
         conversation.append({"role": "assistant", "content": response['choices'][0]['message']['content']})
-        print("Conve",conversation)
+        # print("Conve",conversation)
         # print("\n" + response['choices'][0]['message']['content'] + "\n")
         
         text = response['choices'][0]['message']['content']
-        # regex = r"(credit card)"
-        # match = re.search(regex, text.lower())
-        # print(match)
-        # if match:
-        #     text += " To know more, please visit https://www.icicibank.com/card/credit-cards/credit-card"
 
-        # regex = r"(personal loan)"
-        # match = re.search(regex, text.lower())
-        # if match:
-        #     text += " To know more, please visit https://www.icicibank.com/personal-banking/loans/personal-loan"
-
-        # regex = r"(home loan)"
-        # match = re.search(regex, text.lower())
-        # if match:
-        #     text += " To know more, please visit https://www.icicibank.com/personal-banking/loans/home-loan"
-
-        # regex = r"(fixed deposit)"
-        # match = re.search(regex, text.lower())
-        # if match:
-        #     text += " To know more, please visit https://www.icicibank.com/personal-banking/deposits/fixed-deposit"
-
-        # regex = r"(demat account)|(trading account)"
-        # match = re.search(regex, text.lower())
-        # if match:
-        #     text += " To know more, please visit https://www.icicibank.com/personal-banking/accounts/three-in-one-trading-account"
-        # # Check if response contains a URL and generate response if so
-        # regex = r"(?P<url>https?://[^\s]+)"
-        # #     regex = r'https?://(?:www\.)?icicibank\.com/\S+(?:\?\S*)?(?:#\S*)?'
-        regex = r"https?://[^\s<>]+(?:\w/)?(?:[^\s()]*)"
-        match = re.search(regex, text)
-        print(match)
-        if match:
-            url = match.group("url")
-            text = text.replace(url, "")
-            # link = generate_response(url)
-            link = url
-            #         print(link)
-            return f"{text}, {link}"
-
-        # Return response text
         return text
 
     
@@ -238,12 +211,16 @@ def answer_query_with_context(
   
 
 def inputdata(inpval: str) :
-    response = answer_query_with_context(inpval, df, document_embeddings)
-    if isinstance(response, tuple):
-        text, url = response
-        return text, url
-    else:
-        return response
+    
+    try:
+        response = answer_query_with_context(inpval, df, document_embeddings)
+        if isinstance(response, tuple):
+            text, url = response
+            return text, url
+        else:
+            return response
+    except:
+        return None
 
 
 # print(answer_query_with_context("Tell me about home loan", df, document_embeddings)[0].strip())
